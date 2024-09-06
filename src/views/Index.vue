@@ -1,292 +1,297 @@
 <script setup lang="ts">
-import {ref, onMounted, onUnmounted, watch} from "vue"
-import {ipcRenderer} from 'electron'
-import {ElMessage, ElLoading, ElTable} from "element-plus"
-import localStorageCache from "../common/localStorage"
-import {Delete, Promotion} from "@element-plus/icons-vue"
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ipcRenderer } from "electron";
+import { ElMessage, ElLoading, ElTable } from "element-plus";
+import localStorageCache from "../common/localStorage";
+import { Delete, Promotion } from "@element-plus/icons-vue";
 
 interface resData {
-  url: string,
-  url_sign: string,
-  size: any,
-  platform: string,
-  type: string,
-  type_str: string,
-  progress_bar: any,
-  save_path: string,
-  decode_key: string,
-  description: string,
+  url: string;
+  url_sign: string;
+  size: any;
+  platform: string;
+  type: string;
+  type_str: string;
+  progress_bar: any;
+  save_path: string;
+  decode_key: string;
+  description: string;
 }
 
-const tableData = ref<resData[]>([])
+const tableData = ref<resData[]>([]);
 
-const resType = ref({
-  video: true,
-  audio: true,
-  image: false,
-  m3u8: false
-})
+// video, audio, image, m3u8
+const resType = ref<String[]>(["video", "audio"]);
 
+const isInitApp = ref(false);
 
-const isInitApp = ref(false)
-
-const multipleTableRef = ref<InstanceType<typeof ElTable>>()
-const multipleSelection = ref<resData[]>([])
-const loading = ref()
+const multipleTableRef = ref<InstanceType<typeof ElTable>>();
+const multipleSelection = ref<resData[]>([]);
+const loading = ref();
 
 onMounted(() => {
-  let resTypeCache = localStorageCache.get("res-type")
-  if (resTypeCache) {
-    resType.value = resTypeCache
+  let resTypeCache = localStorageCache.get("res-type");
+  if (resTypeCache?.length) {
+    resType.value = resTypeCache;
   }
 
-  let tableDataCache = localStorageCache.get("res-table-data")
+  let tableDataCache = localStorageCache.get("res-table-data");
   if (tableDataCache) {
-    tableData.value = tableDataCache
+    tableData.value = tableDataCache;
   }
 
-  ipcRenderer.on('on_get_queue', (res, data) => {
+  ipcRenderer.on("on_get_queue", (res, data) => {
     // @ts-ignore
-    if (resType.value.hasOwnProperty(data.type_str) && resType.value[data.type_str]) {
-      tableData.value.push(data)
-      localStorageCache.set("res-table-data", tableData.value, -1)
+    if (resType.value.includes(data.type_str)) {
+      tableData.value.push(data);
+      localStorageCache.set("res-table-data", tableData.value, -1);
     }
-  })
+  });
 
-  ipcRenderer.on('on_down_file_schedule', (res: any, data: any) => {
-    loading.value && loading.value.setText(`${data.schedule}%`)
-  })
+  ipcRenderer.on("on_down_file_schedule", (res: any, data: any) => {
+    loading.value && loading.value.setText(`${data.schedule}%`);
+  });
 
-  ipcRenderer.invoke('invoke_app_is_init').then((isInit: boolean) => {
+  ipcRenderer.invoke("invoke_app_is_init").then((isInit: boolean) => {
     if (!isInit && !isInitApp.value) {
-      isInitApp.value = true
-      ipcRenderer.invoke('invoke_init_app')
+      isInitApp.value = true;
+      ipcRenderer.invoke("invoke_init_app");
     }
-  })
+  });
 
   loading.value = ElLoading.service({
     lock: true,
-    text: 'Loading',
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
+    text: "Loading",
+    background: "rgba(0, 0, 0, 0.7)",
+  });
 
-  ipcRenderer.invoke('invoke_start_proxy', {upstream_proxy: localStorageCache.get("upstream_proxy")}).then(() => {
-    loading.value.close()
-  }).catch((err) => {
-    ElMessage({
-      message: err,
-      type: 'warning',
+  ipcRenderer
+    .invoke("invoke_start_proxy", { upstream_proxy: localStorageCache.get("upstream_proxy") })
+    .then(() => {
+      loading.value.close();
     })
-    loading.value.close()
-  })
-})
+    .catch((err) => {
+      ElMessage({
+        message: err,
+        type: "warning",
+      });
+      loading.value.close();
+    });
+});
 
 onUnmounted(() => {
-  ipcRenderer.removeListener('on_get_queue', (res) => {
+  ipcRenderer.removeListener("on_get_queue", (res) => {
     // console.log(res)
-  })
+  });
 
-  ipcRenderer.removeListener('on_down_file_schedule', (res) => {
+  ipcRenderer.removeListener("on_down_file_schedule", (res) => {
     // console.log(res)
-  })
-})
+  });
+});
 
-watch(resType, (res, res1) => {
-  localStorageCache.set("res-type", resType.value, -1)
-}, {deep: true})
+watch(
+  resType,
+  (res, res1) => {
+    localStorageCache.set("res-type", resType.value, -1);
+  },
+  { deep: true }
+);
 
 const handleSelectionChange = (val: resData[]) => {
-  multipleSelection.value = val
-}
+  multipleSelection.value = val;
+};
 
 const handleBatchDown = async () => {
   if (multipleSelection.value.length <= 0) {
-    return
+    return;
   }
 
-  let save_dir = localStorageCache.get("save_dir")
+  let save_dir = localStorageCache.get("save_dir");
 
   if (!save_dir) {
     ElMessage({
-      message: '请设置保存目录',
-      type: 'warning'
-    })
-    return
+      message: "请设置保存目录",
+      type: "warning",
+    });
+    return;
   }
 
   loading.value = ElLoading.service({
     lock: true,
-    text: '下载中',
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
-  const quality = localStorageCache.get("quality") ? localStorageCache.get("quality") : -1
+    text: "下载中",
+    background: "rgba(0, 0, 0, 0.7)",
+  });
+  const quality = localStorageCache.get("quality") ? localStorageCache.get("quality") : -1;
   for (const item of multipleSelection.value) {
-    let downRes = await ipcRenderer.invoke('invoke_down_file', {
+    let downRes = await ipcRenderer.invoke("invoke_down_file", {
       data: Object.assign({}, item),
       save_path: save_dir,
       quality: quality,
-    })
+    });
 
     if (downRes !== false) {
-      item.progress_bar = "100%"
-      item.save_path = downRes.fullFileName
+      item.progress_bar = "100%";
+      item.save_path = downRes.fullFileName;
     }
   }
-  loading.value.close()
-  multipleTableRef.value!.clearSelection()
-}
-
+  loading.value.close();
+  multipleTableRef.value!.clearSelection();
+};
 
 const handleDown = async (index: number, row: any) => {
-  const save_dir = localStorageCache.get("save_dir")
+  const save_dir = localStorageCache.get("save_dir");
   if (!save_dir) {
     ElMessage({
-      message: '请设置保存目录',
-      type: 'warning'
-    })
-    return
+      message: "请设置保存目录",
+      type: "warning",
+    });
+    return;
   }
 
   loading.value = ElLoading.service({
     lock: true,
-    text: '下载中',
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
+    text: "下载中",
+    background: "rgba(0, 0, 0, 0.7)",
+  });
 
-  const quality = localStorageCache.get("quality") ? localStorageCache.get("quality") : -1
-  ipcRenderer.invoke('invoke_down_file', {
-    data: Object.assign({}, tableData.value[index]),
-    save_path: save_dir,
-    quality: quality,
-  }).then((res) => {
-    if (res !== false) {
-      tableData.value[index].progress_bar = "100%"
-      tableData.value[index].save_path = res.fullFileName
-      localStorageCache.set("res-table-data", tableData.value, -1)
-    } else {
+  const quality = localStorageCache.get("quality") ? localStorageCache.get("quality") : -1;
+  ipcRenderer
+    .invoke("invoke_down_file", {
+      data: Object.assign({}, tableData.value[index]),
+      save_path: save_dir,
+      quality: quality,
+    })
+    .then((res) => {
+      if (res !== false) {
+        tableData.value[index].progress_bar = "100%";
+        tableData.value[index].save_path = res.fullFileName;
+        localStorageCache.set("res-table-data", tableData.value, -1);
+      } else {
+        ElMessage({
+          message: "下载失败",
+          type: "warning",
+        });
+      }
+      loading.value.close();
+    })
+    .catch((err) => {
       ElMessage({
         message: "下载失败",
-        type: 'warning',
-      })
-    }
-    loading.value.close()
-  }).catch((err) => {
-    ElMessage({
-      message: "下载失败",
-      type: 'warning',
-    })
-    loading.value.close()
-  })
-}
+        type: "warning",
+      });
+      loading.value.close();
+    });
+};
 
 const decodeWxFile = (index: number) => {
   loading.value = ElLoading.service({
     lock: true,
     text: "解密中",
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
+    background: "rgba(0, 0, 0, 0.7)",
+  });
 
-  ipcRenderer.invoke('invoke_select_wx_file', {
-    index: index,
-    data: Object.assign({}, tableData.value[index]),
-  }).then((res) => {
-    if (res !== false) {
-      ElMessage({
-        message: "解密成功: " + res.fullFileName,
-        type: 'success',
-      })
-      tableData.value[index].progress_bar = "100%"
-      tableData.value[index].save_path = res.fullFileName
-      localStorageCache.set("res-table-data", tableData.value, -1)
-    } else {
+  ipcRenderer
+    .invoke("invoke_select_wx_file", {
+      index: index,
+      data: Object.assign({}, tableData.value[index]),
+    })
+    .then((res) => {
+      if (res !== false) {
+        ElMessage({
+          message: "解密成功: " + res.fullFileName,
+          type: "success",
+        });
+        tableData.value[index].progress_bar = "100%";
+        tableData.value[index].save_path = res.fullFileName;
+        localStorageCache.set("res-table-data", tableData.value, -1);
+      } else {
+        ElMessage({
+          message: "解密失败",
+          type: "warning",
+        });
+      }
+      loading.value.close();
+    })
+    .catch((err) => {
       ElMessage({
         message: "解密失败",
-        type: 'warning',
-      })
-    }
-    loading.value.close()
-  }).catch((err) => {
-    ElMessage({
-      message: "解密失败",
-      type: 'warning',
-    })
-    loading.value.close()
-  })
-}
+        type: "warning",
+      });
+      loading.value.close();
+    });
+};
 
 const handlePreview = (index: number, row: any) => {
-  ipcRenderer.invoke('invoke_resources_preview', {url: row.url}).catch(() => {
-  })
-}
+  ipcRenderer.invoke("invoke_resources_preview", { url: row.url }).catch(() => {});
+};
 
 const handleClear = () => {
-  tableData.value = []
-  localStorageCache.del("res-table-data")
-  ipcRenderer.invoke('invoke_file_del', {
-    url_sign: "all"
-  })
-}
+  tableData.value = [];
+  localStorageCache.del("res-table-data");
+  ipcRenderer.invoke("invoke_file_del", {
+    url_sign: "all",
+  });
+};
 
 const handleCopy = (text: string) => {
-  let el = document.createElement('input')
-  el.setAttribute('value', text)
-  document.body.appendChild(el)
-  el.select()
-  document.execCommand('copy')
-  document.body.removeChild(el)
+  let el = document.createElement("input");
+  el.setAttribute("value", text);
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand("copy");
+  document.body.removeChild(el);
   ElMessage({
     message: "复制成功",
-    type: 'success',
-  })
-}
+    type: "success",
+  });
+};
 
 const handleDel = (index: number) => {
-  let arr = tableData.value
+  let arr = tableData.value;
   arr.splice(index, 1);
-  tableData.value = arr
-  localStorageCache.set("res-table-data", tableData.value, -1)
-  ipcRenderer.invoke('invoke_file_del', {
-    url_sign: tableData.value[index].url_sign
-  })
-}
+  tableData.value = arr;
+  localStorageCache.set("res-table-data", tableData.value, -1);
+  ipcRenderer.invoke("invoke_file_del", {
+    url_sign: tableData.value[index].url_sign,
+  });
+};
 
 const openFileDir = (index: number) => {
-  ipcRenderer.invoke('invoke_open_file_dir', {
-    save_path: tableData.value[index].save_path
-  })
-}
+  ipcRenderer.invoke("invoke_open_file_dir", {
+    save_path: tableData.value[index].save_path,
+  });
+};
 
 const handleInitApp = () => {
-  ipcRenderer.invoke('invoke_app_is_init').then((isInit: boolean) => {
+  ipcRenderer.invoke("invoke_app_is_init").then((isInit: boolean) => {
     if (isInit) {
-      isInitApp.value = false
+      isInitApp.value = false;
     } else {
-      ipcRenderer.invoke('invoke_init_app')
+      ipcRenderer.invoke("invoke_init_app");
     }
-  })
-}
-
+  });
+};
 </script>
 
 <template lang="pug">
 el-container.container
   el-header
     el-row
-      div
-        el-button(type="primary" @click="handleBatchDown") 批量下载
-        el-button(v-if="isInitApp" @click="handleInitApp")
-          el-icon
-            Promotion
-          p 安装检测(如果看到此按钮说明软件安装未完成则需要手动点击此按钮)
-        el-button(@click="handleClear")
-          el-icon
-            Delete
-          p 清空列表
-        el-button(@click="resType.video=!resType.video" :type="resType.video ? 'primary' : 'info'" ) 视频
-        el-button(@click="resType.audio=!resType.audio" :type="resType.audio ? 'primary' : 'info'" ) 音频
-        el-button(@click="resType.image=!resType.image" :type="resType.image ? 'primary' : 'info'" ) 图片
-        el-button(@click="resType.m3u8=!resType.m3u8" :type="resType.m3u8 ? 'primary' : 'info'" ) m3u8
-        a(style="color: red") &nbsp;&nbsp;&nbsp;点击左边选项，选择需要拦截的资源类型
+      el-button(type="primary" @click="handleBatchDown") 批量下载
+      el-button(v-if="isInitApp" @click="handleInitApp")
+        el-icon
+          Promotion
+        span 安装检测(如果看到此按钮说明软件安装未完成则需要手动点击此按钮)
+      el-button(@click="handleClear")
+        el-icon
+          Delete
+        span 清空列表
+      el-checkbox-group(v-model="resType")
+        el-checkbox-button(value="video") 视频
+        el-checkbox-button(value="audio") 音频
+        el-checkbox-button(value="image") 图片
+        el-checkbox-button(value="m3u8") m3u8
+      a(style="color: red") &nbsp;&nbsp;&nbsp;点击左边选项，选择需要拦截的资源类型
   el-main
     el-table(ref="multipleTableRef" @selection-change="handleSelectionChange" :data="tableData" max-height="100%" stripe)
       el-table-column(type="selection")
@@ -318,18 +323,9 @@ el-container.container
 <style scoped lang="less">
 .container {
   padding: 0.5rem;
-
-  .el-button {
-    margin: 0.1rem;
-  }
-
-  .el-button p {
-    padding-left: 0.2rem;
-  }
-
   .el-row {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-evenly;
   }
 
   header {
