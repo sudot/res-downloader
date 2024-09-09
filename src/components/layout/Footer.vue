@@ -1,20 +1,29 @@
-<script setup lang="ts">
-import { ipcRenderer } from "electron";
-import pkg from "../../../package.json";
-const v = pkg.version;
-const jump = (url: String) => {
-  ipcRenderer.invoke("invoke_open_default_browser", {
-    url: url,
-  });
-};
-</script>
-<template lang="pug">
-div.line
-  a.item 当前版本: {{v}}
-  a.item 站长邮箱: gowas.work@gmail.com
-  a.item(@click="jump('https://github.com/putyy/res-downloader')") 获取更新
-  a.item(@click="jump('https://github.com/putyy/res-downloader/issues')") 问题反馈
+<template>
+  <div class="line">
+    <a class="item">当前版本: {{ v }}</a>
+    <a class="item">站长邮箱: taogarfield@hotmail.com</a>
+    <a class="item" @click="jump('https://github.com/sudot/res-downloader')">
+      获取更新
+    </a>
+    <a
+      class="item"
+      @click="jump('https://github.com/sudot/res-downloader/issues')"
+    >
+      问题反馈
+    </a>
+  </div>
 </template>
+
+<script setup lang="ts">
+import { ipcRenderer } from 'electron'
+import pkg from '../../../package.json'
+const v = pkg.version
+const jump = (url: String) => {
+  ipcRenderer.invoke('invoke_open_default_browser', {
+    url: url,
+  })
+}
+</script>
 
 <style lang="less" scoped>
 .line {

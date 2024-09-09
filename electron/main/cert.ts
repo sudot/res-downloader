@@ -30,7 +30,7 @@ export async function installCert(checkInstalled = true) {
     } else if (process.platform === 'linux') {
         return new Promise((resolve, reject) => {
             clipboard.writeText(
-                "https://github.com/putyy/res-downloader/blob/master/electron/res/keys/public.pem",
+                "https://github.com/sudot/res-downloader/blob/master/electron/res/keys/public.pem",
             )
             dialog.showMessageBoxSync({
                 type: "info",

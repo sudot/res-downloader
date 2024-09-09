@@ -12,12 +12,12 @@ const EXECUTABLE_PATH = path.join(
     'electron/res',
 )
 
-const HOME_PATH = path.join(os.homedir(), '.res-downloader@putyy')
+const HOME_PATH = path.join(os.homedir(), '.res-downloader@sudot')
 export default {
     IS_DEV: isDev,
     EXECUTABLE_PATH,
     HOME_PATH,
-    APP_CN_NAME: '爱享素材下载器',
+    APP_CN_NAME: '资源下载器',
     APP_EN_NAME: 'ResDownloader',
     CERT_PRIVATE_PATH: path.join(EXECUTABLE_PATH, './keys/private.pem'),
     CERT_PUBLIC_PATH: path.join(EXECUTABLE_PATH, './keys/public.pem'),
