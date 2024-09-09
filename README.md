@@ -7,8 +7,9 @@
 - 优化嗅探表格滚动，解决左侧菜单和表格上方功能按钮一起滚动
 - 优化菜单布局，支持收起和展开
 - 优化设置，布局优化、保存位置支持选择和输入
+- 优化项目安装网络问题，添加项目镜像
 
-====== 以下是原项目说明 ===========
+# ====== 以下是原项目介绍 ======
 
 🎯 基于 [electron-vite-vue](https://github.com/electron-vite/electron-vite-vue.git)  
 📦 操作简单、可获取不同类型的资源
@@ -67,13 +68,11 @@ Win7 无法使用
 > 手动删除安装标识锁文件，之后再打开软件会进行检查证书是否正确安装
 >
 > > MAC: /Users/你的用户名称/.res-downloader@sduot/res-downloader-installed.lock
-> > Win: C:\Users\Admin\.res-downloader@sduot/res-downloader-installed.lock
+> > Win: C:\Users\你的用户名称\.res-downloader@sduot/res-downloader-installed.lock
 
 其他问题请留言 https://github.com/sduot/res-downloader/issues
 
 ## 二次开发
-
-> ps： 打包慢的问题可以参考 https://www.putyy.com/articles/87
 
 ```sh
 git clone https://github.com/sduot/res-downloader
